@@ -3,7 +3,7 @@
 PYTHON := .venv/bin/python
 
 setup:
-	uv venv
+	uv venv --clear
 	uv pip install -e ".[dev]"
 
 fmt:
@@ -15,10 +15,9 @@ lint:
 test:
 	uv run pytest
 
-# Placeholders (we’ll implement next)
 ingest:
 	uv run python -m socbox.ingest.download
-	uv run python -m socbox.ingest.normalize
+	uv run python -m socbox.ingest.normalize_cli
 
 detect:
 	uv run python -m socbox.detect.engine --config configs/detections.yaml

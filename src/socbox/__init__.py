@@ -1,0 +1,1 @@
+"""SOC Analyst in a Box: defensive analytics pipeline (ingest -> detect -> report)."""

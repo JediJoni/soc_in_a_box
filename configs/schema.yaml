@@ -1,0 +1,14 @@
+version: 1
+fields:
+  - "@timestamp"
+  - "event.dataset"
+  - "event.category"
+  - "event.action"
+  - "event.outcome"
+  - "host.name"
+  - "user.name"
+  - "source.ip"
+  - "destination.ip"
+  - "process.name"
+  - "process.command_line"
+  - "message"

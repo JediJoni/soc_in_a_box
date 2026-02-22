@@ -1,0 +1,11 @@
+version: 1
+
+# Detections are implemented in src/socbox/detect/rules.py
+# This file controls which rules run and with what thresholds.
+enabled:
+  - brute_force_auth
+
+parameters:
+  brute_force_auth:
+    window_minutes: 10
+    failures_threshold: 8

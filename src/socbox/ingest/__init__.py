@@ -1,0 +1,1 @@
+"""Ingest layer: download (optional), parse, normalize raw logs into a canonical schema."""

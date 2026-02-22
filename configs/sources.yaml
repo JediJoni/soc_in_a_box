@@ -1,0 +1,4 @@
+mordor:
+  enabled: true
+  path_glob: "data/raw/mordor/**/*"
+  dataset_name: "mordor"
