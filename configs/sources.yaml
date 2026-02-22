@@ -1,4 +1,19 @@
-mordor:
-  enabled: true
-  path_glob: "data/raw/mordor/**/*"
-  dataset_name: "mordor"
+version: 1
+
+# Choose which input source(s) to ingest.
+# - mordor: expects real Security-Datasets/Mordor JSON/JSONL files under data/raw/mordor/
+# - sample: uses a tiny committed sample file under data/samples/ for quick demo/testing
+
+# Default is mordor. For a fast demo, switch to sample; comment out mordor & uncomment sample.
+active_sources:
+  - mordor
+  # - sample
+
+sources:
+  mordor:
+    dataset_name: "mordor"
+    path_glob: "data/raw/mordor/**/*"
+
+  sample:
+    dataset_name: "sample"
+    path_glob: "data/samples/**/*.jsonl"

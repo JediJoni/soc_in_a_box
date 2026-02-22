@@ -16,7 +16,7 @@ This repo focuses on *defensive* engineering & investigation. It intentionally a
 - Run detections → write alerts
 - Render alerts into SOC-style case reports
 
-✅ **Artifacts produced**
+✅ **Artifacts produced by make all**
 - `data/processed/events.jsonl`
 - `data/processed/events.parquet`
 - `out/alerts.jsonl`
@@ -30,6 +30,11 @@ This repo focuses on *defensive* engineering & investigation. It intentionally a
 
 ## Quickstart (one command)
 
+Tip: make clean && make all rebuilds outputs from scratch (keeps .venv).
+For a full environment rebuild: make reset && make all.
+
+Expected outputs: `data/processed/events.parquet`, `out/alerts.jsonl`, `reports/cases/CASE-*.md`.
+
 ```bash
 make all
 ```
@@ -42,6 +47,19 @@ make test
 make ingest
 make detect
 make report
+```
+
+## Architecture (high level)
+
+```mermaid
+flowchart LR
+  A[Raw dataset JSON/JSONL] --> B[Normalize]
+  B --> C[data/processed/events.jsonl]
+  B --> D[data/processed/events.parquet]
+  D --> E[Detections]
+  E --> F[out/alerts.jsonl]
+  F --> G[Case Reports]
+  G --> H[reports/cases/CASE-*.md]
 ```
 
 ---
@@ -77,6 +95,24 @@ make report
 Attribution: dataset provenance and scenario context are documented by the Threat Hunter Playbook / Security-Datasets notebook.
 
 ---
+
+## Optional: sample mode (quick demo)
+
+If you want a lightweight demo run without downloading a dataset, enable the `sample` source in `configs/sources.yaml`:
+
+- Set:
+  - `active_sources: [sample]`
+- Ensure a tiny sample file exists under `data/samples/` (e.g. `data/samples/sample_events.jsonl`)
+
+Then run:
+
+```bash
+make ingest
+make detect
+make report
+```
+
+Sample mode is for quick smoke runs. Switch active_sources to sample in configs/sources.yaml. For full detections, switch back to mordor.
 
 ## Example outputs (snippets)
 
@@ -126,7 +162,7 @@ For this dataset, additional Sysmon-style mappings are enabled (e.g. `Hostname`,
   * Flags Sysmon ProcessAccess (Event ID 10) where a process accesses a sensitive target (e.g. `lsass.exe`)
   * Emits alert evidence with sample rows + access-mask summary (report layer)
 
-*(Planned next: PowerShell 4103 keyword triage, registry/service modification, conservative beaconing patterns.)*
+Config: configs/detections.yaml
 
 ---
 
@@ -145,3 +181,5 @@ For this dataset, additional Sysmon-style mappings are enabled (e.g. `Hostname`,
 * **Canonical schema** to keep detections dataset-agnostic
 * **Explainable detections** (rule-based) over opaque scoring
 * **Readable investigations** that mirror SOC triage workflow
+
+Roadmap (optional): PowerShell keyword triage, registry/service modification, conservative beaconing patterns.

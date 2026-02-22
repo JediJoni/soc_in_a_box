@@ -1,36 +1,40 @@
-.PHONY: setup fmt lint test ingest detect report clean all verify
-
-PYTHON := .venv/bin/python
+.PHONY: setup reset fmt lint test ingest detect report clean all verify
 
 setup:
-	uv venv --clear
+	@test -d .venv || uv venv
 	uv pip install -e ".[dev]"
 
-fmt:
-	uv run ruff format .
+# Use this when you actually want a fresh environment
+reset:
+	rm -rf .venv
+	uv venv
+	uv pip install -e ".[dev]"
 
-lint:
-	uv run ruff check .
-
-test:
+test: setup
 	uv run pytest
 
-ingest:
+ingest: setup
 	uv run python -m socbox.ingest.download
 	uv run python -m socbox.ingest.normalize_cli
 
-detect:
+detect: setup
 	uv run python -m socbox.detect.engine --config configs/detections.yaml
 
-report:
+report: setup
 	uv run python -m socbox.report.render --cases out/alerts.jsonl
 
-clean:
-	rm -rf .venv .pytest_cache .ruff_cache out outputs
+fmt: setup
+	uv run ruff format .
+
+lint: setup
+	uv run ruff check .
 
 verify:
 	@test -f data/processed/events.parquet
 	@test -f out/alerts.jsonl
 	@echo "✅ Verified expected outputs exist"
+
+clean:
+	rm -rf .pytest_cache .ruff_cache out outputs
 
 all: setup test ingest detect report
