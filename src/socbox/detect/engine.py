@@ -34,6 +34,19 @@ def run(df: pd.DataFrame, config: Dict[str, Any]) -> List[Dict[str, Any]]:
                     min_events=int(p.get("min_events", 1)),
                 )
             )
+
+        elif rule_id == "powershell_suspicious_keywords":
+            p = params.get("powershell_suspicious_keywords", {})
+            alerts.extend(
+                rules.powershell_suspicious_keywords(
+                    df,
+                    event_ids=list(p.get("event_ids", ["4103"])),
+                    keywords=list(p.get("keywords", [])),
+                    min_keyword_hits=int(p.get("min_keyword_hits", 1)),
+                    max_samples=int(p.get("max_samples", 10)),
+                )
+            )
+            
         else:
             raise ValueError(f"Unknown rule_id: {rule_id}")
 

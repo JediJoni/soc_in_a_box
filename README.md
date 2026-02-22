@@ -10,33 +10,39 @@ This repo focuses on *defensive* engineering & investigation. It intentionally a
 
 ## What this repo contains today
 
-* Example investigation: reports/cases/CASE-0001_...md
+✅ **End-to-end pipeline**
+- Ingest Mordor-style Security-Datasets JSON/JSONL
+- Normalize into a canonical schema
+- Run detections → write alerts
+- Render alerts into SOC-style case reports
 
-✅ **Working ingest + normalization pipeline**  
-- Parses Mordor-style Security-Datasets JSON/JSONL
-- Normalizes into a small canonical schema
-- Writes:
-  - `data/processed/events.jsonl` (easy to inspect)
-  - `data/processed/events.parquet` (fast for analytics/detections)
+✅ **Artifacts produced**
+- `data/processed/events.jsonl`
+- `data/processed/events.parquet`
+- `out/alerts.jsonl`
+- `reports/cases/CASE-0001_*.md` (example case report)
 
-✅ **Tests + CI foundations**  
-- `pytest` smoke + normalization tests
-- GitHub Actions runs lint/test
+✅ **Tests + CI**
+- `pytest` unit tests
+- GitHub Actions runs lint + tests
 
 ---
 
-## Quickstart
+## Quickstart (one command)
+
+```bash
+make all
+```
+
+Or step-by-step:
 
 ```bash
 make setup
 make test
 make ingest
+make detect
+make report
 ```
-
-Outputs:
-
-* `data/processed/events.jsonl`
-* `data/processed/events.parquet`
 
 ---
 
@@ -50,19 +56,39 @@ This repo currently uses an OTRF **Security-Datasets** “Mordor-style” datase
 
   * `datasets/atomic/windows/lateral_movement/host/empire_psexec_dcerpc_tcp_svcctl.zip`
 
-Reproduce the exact run:
+Reproduce the exact dataset download:
 
 ```bash
 cd data/raw/mordor
 curl -L "https://raw.githubusercontent.com/OTRF/Security-Datasets/master/datasets/atomic/windows/lateral_movement/host/empire_psexec_dcerpc_tcp_svcctl.zip" -o dataset.zip
 unzip -o dataset.zip
 rm dataset.zip
-
 cd ../../..
+```
+
+Run the pipeline:
+
+```bash
 make ingest
+make detect
+make report
 ```
 
 Attribution: dataset provenance and scenario context are documented by the Threat Hunter Playbook / Security-Datasets notebook.
+
+---
+
+## Example outputs (snippets)
+
+### Alert JSON (example)
+
+```json
+{"rule_id":"suspicious_process_access","severity":"high","title":"Suspicious ProcessAccess to sensitive target process","timestamp":"...","entities":{"host":"...","user":"...","source_process":"...","target_process":"..."}}
+```
+
+### Case report
+
+See: `reports/cases/CASE-0001_*.md`
 
 ---
 
@@ -72,98 +98,50 @@ Attribution: dataset provenance and scenario context are documented by the Threa
 # count normalized events
 wc -l data/processed/events.jsonl
 
-# show top categories
+# show top categories + event IDs
 uv run python - << 'PY'
 import pandas as pd
 df = pd.read_parquet("data/processed/events.parquet")
-print(df["event.category"].value_counts(dropna=False).head(10))
+print("categories:", df["event.category"].value_counts(dropna=False).head(10).to_dict())
+print("event.action:", df["event.action"].value_counts(dropna=False).head(10).to_dict())
 PY
 ```
 
 ---
 
-## Note on normalization coverage (why some fields may be null)
+## Note on normalization coverage
 
 Security-Datasets/Mordor files are not perfectly uniform across scenarios.
-The current normalizer is intentionally conservative and maps a small set of common field paths.
+The normalizer is intentionally conservative and maps common field paths.
 
-For the current dataset, some high-value attributes exist under alternative keys (e.g. `Hostname`, `AccountName`, `SourceImage`) so certain normalized fields may appear as `null` until additional mappings are enabled.
-
-**Next improvement:** expand mappings for Sysmon-style records so `host.name`, `user.name`, and `process.*` populate more consistently.
-
----
-
-## Planned detections (MVP)
-
-* **Brute force authentication**
-  *N failures from same source IP to same user/host within T minutes*
-* **Rapid IP change / “impossible travel”-style behaviour**
-  *(initially without geo; later add ASN/country enrichment)*
-* **Suspicious PowerShell command patterns**
-  *(encoded commands, unusual flags, download cradles)*
-* **Beaconing-ish periodic connections (conservative)**
-  *(repeated connections at near-regular intervals; not “C2 confirmed”)*
+Some fields may appear as `null` depending on the scenario and record type.
+For this dataset, additional Sysmon-style mappings are enabled (e.g. `Hostname`, `AccountName`, `SourceImage/TargetImage`) so `host.name`, `user.name`, and `process.*` are populated where present.
 
 ---
 
-## Repository structure
+## Detections implemented
 
-```text
-soc_in_a_box/
-  README.md
-  pyproject.toml
-  Makefile
+* `suspicious_process_access`
 
-  data/
-    raw/               # ignored (gitignored)
-    processed/         # ignored (gitignored)
-    samples/           # tiny committed samples only
+  * Flags Sysmon ProcessAccess (Event ID 10) where a process accesses a sensitive target (e.g. `lsass.exe`)
+  * Emits alert evidence with sample rows + access-mask summary (report layer)
 
-  configs/
-    sources.yaml       # dataset sources + formats
-    schema.yaml        # canonical event schema
-    detections.yaml    # enabled detections + thresholds (coming next)
-
-  src/socbox/
-    __init__.py
-    ingest/
-      download.py
-      parse_mordor.py
-      normalize.py
-      normalize_cli.py
-    detect/
-      rules.py         # TODO
-      engine.py        # TODO
-    report/
-      triage.py        # TODO
-      render.py        # TODO
-
-  reports/
-    cases/             # TODO: investigation writeups (markdown)
-
-  tests/
-    test_smoke.py
-    test_normalize.py
-    test_rules.py      # TODO
-    test_engine.py     # TODO
-
-  .github/workflows/
-    tests.yml
-```
+*(Planned next: PowerShell 4103 keyword triage, registry/service modification, conservative beaconing patterns.)*
 
 ---
 
-## Design choices (why this looks like real SOC work)
+## Repository structure (high level)
 
-* Use a **canonical schema** so detections aren’t tied to one dataset format
-* Prefer **explainable detections** + clear triage steps over “black box” claims
-* Produce readable **case reports** that recruiters can skim quickly
+* `src/socbox/ingest/` — parse + normalize to JSONL/Parquet
+* `src/socbox/detect/` — rule functions + engine
+* `src/socbox/report/` — render alerts into Markdown case files
+* `configs/` — schema + detection configuration
+* `reports/cases/` — case reports
 
 ---
 
-## Next milestones
+## Design choices
 
-1. Improve normalization mappings for Sysmon-style records (host/user/process extraction)
-2. Add 2–4 detections + output `alerts.jsonl`
-3. Generate 2–3 case reports in `reports/cases/`
-4. Expand tests (`rules`, `engine`) + keep CI green
+* **Canonical schema** to keep detections dataset-agnostic
+* **Explainable detections** (rule-based) over opaque scoring
+* **Readable investigations** that mirror SOC triage workflow

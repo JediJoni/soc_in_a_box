@@ -2,6 +2,7 @@ version: 1
 
 enabled:
   - suspicious_process_access
+  - powershell_suspicious_keywords
 
 parameters:
   suspicious_process_access:
@@ -12,3 +13,17 @@ parameters:
       - "\\security.exe"
       - "\\lsaiso.exe"
     min_events: 1
+
+  powershell_suspicious_keywords:
+    event_ids: ["4103"]
+    keywords:
+      - "encodedcommand"
+      - "frombase64string"
+      - "iex"
+      - "invoke-expression"
+      - "downloadstring"
+      - "new-object net.webclient"
+      - "invoke-webrequest"
+      - "invoke-restmethod"
+    min_keyword_hits: 1
+    max_samples: 10

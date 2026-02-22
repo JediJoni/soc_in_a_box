@@ -117,3 +117,78 @@ def suspicious_process_access(
         )
 
     return alerts
+
+
+def powershell_suspicious_keywords(
+    df: pd.DataFrame,
+    *,
+    event_ids: List[str],
+    keywords: List[str],
+    min_keyword_hits: int = 1,
+    max_samples: int = 10,
+) -> List[Dict[str, Any]]:
+    """
+    Detect PowerShell Operational events (e.g., 4103) containing suspicious keywords.
+    This is triage-oriented: it flags content worth human review, not 'confirmed malicious'.
+    """
+    if df.empty:
+        return []
+
+    required_cols = {"@timestamp", "event.action", "host.name", "user.name", "message"}
+    missing = required_cols - set(df.columns)
+    if missing:
+        return []
+
+    ids = {str(x) for x in event_ids}
+    ps = df[df["event.action"].astype(str).isin(ids)].copy()
+    if ps.empty:
+        return []
+
+    kw = [k.lower() for k in keywords]
+
+    def count_hits(msg: Any) -> int:
+        if msg is None or (isinstance(msg, float) and pd.isna(msg)):
+            return 0
+        s = str(msg).lower()
+        return sum(1 for k in kw if k in s)
+
+    ps["keyword_hits"] = ps["message"].apply(count_hits)
+    hits = ps[ps["keyword_hits"] >= int(min_keyword_hits)]
+    if hits.empty:
+        return []
+
+    alerts: List[Dict[str, Any]] = []
+    group_cols = ["host.name", "user.name"]
+    for (host, user), g in hits.groupby(group_cols):
+        g_sorted = g.sort_values("@timestamp")
+        first_ts = str(g_sorted["@timestamp"].iloc[0])
+
+        sample_rows = (
+            g_sorted[["@timestamp", "event.action", "keyword_hits", "message"]]
+            .head(int(max_samples))
+            .to_dict(orient="records")
+        )
+
+        top_keywords = []
+        joined = " ".join(str(x).lower() for x in g_sorted["message"].dropna().head(50).tolist())
+        for k in kw:
+            if k in joined:
+                top_keywords.append(k)
+        top_keywords = top_keywords[:10]
+
+        alerts.append(
+            Alert(
+                rule_id="powershell_suspicious_keywords",
+                severity="medium",
+                title="PowerShell event contains suspicious triage keywords",
+                timestamp=first_ts,
+                entities={"host": host, "user": user},
+                evidence={
+                    "count": int(len(g_sorted)),
+                    "top_keywords": top_keywords,
+                    "samples": sample_rows,
+                },
+            ).to_dict()
+        )
+
+    return alerts

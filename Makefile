@@ -1,4 +1,4 @@
-.PHONY: setup fmt lint test ingest detect report clean
+.PHONY: setup fmt lint test ingest detect report clean all verify
 
 PYTHON := .venv/bin/python
 
@@ -27,5 +27,10 @@ report:
 
 clean:
 	rm -rf .venv .pytest_cache .ruff_cache out outputs
+
+verify:
+	@test -f data/processed/events.parquet
+	@test -f out/alerts.jsonl
+	@echo "✅ Verified expected outputs exist"
 
 all: setup test ingest detect report
