@@ -3,13 +3,29 @@
 ## Alert summary
 - **Rule:** `suspicious_process_access`
 - **Severity:** `high`
-- **First seen:** `2020-09-20T16:17:03.996000+00:00`
+- **First seen (alert):** `2020-09-20T16:17:03.996000+00:00`
+
+## Time window (from evidence samples)
+- **First seen (samples):** `2020-09-20T16:17:03.996000+00:00`
+- **Last seen (samples):** `2020-09-20T16:18:21.483000+00:00`
+- **Duration:** `77s`
 
 ## Entities
 - **host**: `WORKSTATION6.theshire.local`
 - **user**: `NT AUTHORITY\SYSTEM`
 - **source_process**: `C:\windows\system32\svchost.exe`
 - **target_process**: `C:\windows\system32\lsass.exe`
+
+## Evidence summary
+
+- **Sample count:** `7`
+
+### process.granted_access counts (samples)
+
+| granted_access | count |
+| --- | --- |
+| 0x1000 | 6 |
+| 0x3000 | 1 |
 
 ## Evidence (samples)
 
