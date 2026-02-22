@@ -27,3 +27,5 @@ report:
 
 clean:
 	rm -rf .venv .pytest_cache .ruff_cache out outputs
+
+all: setup test ingest detect report

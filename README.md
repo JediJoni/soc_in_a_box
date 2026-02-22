@@ -10,6 +10,8 @@ This repo focuses on *defensive* engineering & investigation. It intentionally a
 
 ## What this repo contains today
 
+* Example investigation: reports/cases/CASE-0001_...md
+
 ✅ **Working ingest + normalization pipeline**  
 - Parses Mordor-style Security-Datasets JSON/JSONL
 - Normalizes into a small canonical schema
