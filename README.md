@@ -25,7 +25,7 @@ make setup
 make ingest
 make detect
 make report
-````
+```
 
 ## MVP detections (planned)
 
