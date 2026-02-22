@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+.env
+
+# OS
+.DS_Store
+
+# Data (do not commit large/raw datasets)
+data/raw/
+data/processed/
+
+# Outputs
+out/
+outputs/
+EOF
