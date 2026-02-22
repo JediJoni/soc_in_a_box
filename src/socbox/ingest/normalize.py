@@ -54,6 +54,8 @@ class NormalizedEvent:
     destination_ip: Optional[str]
     process_name: Optional[str]
     process_cmd: Optional[str]
+    process_target: Optional[str]
+    process_granted_access: Optional[str]
     message: Optional[str]
     raw: Dict[str, Any]
 
@@ -70,6 +72,8 @@ class NormalizedEvent:
             "destination.ip": self.destination_ip,
             "process.name": self.process_name,
             "process.command_line": self.process_cmd,
+            "process.target": self.process_target,
+            "process.granted_access": self.process_granted_access,
             "message": self.message,
             "raw": self.raw,  # keep for traceability
         }
@@ -160,6 +164,9 @@ def normalize_mordor_event(event: Dict[str, Any], dataset_name: str = "mordor") 
         or _get(event, "CommandLine")
     )
 
+    proc_target = _get(event, "TargetImage") or _get(event, "winlog.event_data.TargetImage")
+    granted = _get(event, "GrantedAccess") or _get(event, "winlog.event_data.GrantedAccess")
+
     action = str(event_id) if event_id is not None else None
     outcome = None  # we can infer later for specific event IDs
     message = _get(event, "message") or _get(event, "winlog.message")
@@ -176,6 +183,8 @@ def normalize_mordor_event(event: Dict[str, Any], dataset_name: str = "mordor") 
         destination_ip=str(dst_ip) if dst_ip is not None else None,
         process_name=str(proc_name) if proc_name is not None else None,
         process_cmd=str(proc_cmd) if proc_cmd is not None else None,
+        process_target=str(proc_target) if proc_target is not None else None,
+        process_granted_access=str(granted) if granted is not None else None,
         message=str(message) if message is not None else None,
         raw=event,
     )

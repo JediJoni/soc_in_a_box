@@ -1,11 +1,14 @@
 version: 1
 
-# Detections are implemented in src/socbox/detect/rules.py
-# This file controls which rules run and with what thresholds.
 enabled:
-  - brute_force_auth
+  - suspicious_process_access
 
 parameters:
-  brute_force_auth:
-    window_minutes: 10
-    failures_threshold: 8
+  suspicious_process_access:
+    target_processes:
+      - "\\lsass.exe"
+      - "\\winlogon.exe"
+      - "\\sam.exe"
+      - "\\security.exe"
+      - "\\lsaiso.exe"
+    min_events: 1

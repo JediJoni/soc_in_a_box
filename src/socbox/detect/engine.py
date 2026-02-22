@@ -25,13 +25,13 @@ def run(df: pd.DataFrame, config: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     alerts: List[Dict[str, Any]] = []
     for rule_id in enabled:
-        if rule_id == "brute_force_auth":
-            p = params.get("brute_force_auth", {})
+        if rule_id == "suspicious_process_access":
+            p = params.get("suspicious_process_access", {})
             alerts.extend(
-                rules.brute_force_auth(
+                rules.suspicious_process_access(
                     df,
-                    window_minutes=int(p.get("window_minutes", 10)),
-                    failures_threshold=int(p.get("failures_threshold", 8)),
+                    target_processes=list(p.get("target_processes", [])),
+                    min_events=int(p.get("min_events", 1)),
                 )
             )
         else:
